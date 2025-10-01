@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: elasticsearch:9.1.4
+    container_name: es01
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=hosun
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ports:
+      - '9200:9200'
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks: [elastic]
+    # Nori 플러그인 설치
+    command: >
+      bash -c '
+        bin/elasticsearch-plugin list | grep -q analysis-nori || bin/elasticsearch-plugin install analysis-nori --batch;
+        /usr/local/bin/docker-entrypoint.sh
+      '
+    healthcheck:
+      test: ['CMD', 'curl', '-s', 'http://localhost:9200']
+      interval: 5s
+      timeout: 3s
+      retries: 50
+
+  setup-kibana-user:
+    image: curlimages/curl:8.8.0
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    # elastic/kibana용 시스템 계정 비번 설정
+    command:
+      [
+        'curl',
+        '-s',
+        '-u',
+        'elastic:hosun',
+        '-H',
+        'Content-Type: application/json',
+        '-X',
+        'POST',
+        'http://elasticsearch:9200/_security/user/kibana_system/_password',
+        '-d',
+        '{"password":"kibana_pass_123"}',
+      ]
+    networks: [elastic]
+    restart: 'no'
+
+  kibana:
+    image: kibana:9.1.4
+    container_name: kb01
+    depends_on:
+      setup-kibana-user:
+        condition: service_completed_successfully
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=kibana_pass_123
+    ports:
+      - '5601:5601'
+    volumes:
+      - kibanadata:/usr/share/kibana/data
+    networks: [elastic]
+
+networks:
+  elastic: {}
+
+volumes:
+  esdata: {}
+  kibanadata: {}

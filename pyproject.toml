@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "elastic-search-example"
+version = "1.0.0"
+description = "ElasticSearch 한국어 검색엔진 구축 프로젝트 - Nori Tokenizer와 BM25 모델 활용"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "*.py"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+elasticsearch = "^8.15.1"
+requests = "^2.32.3"
+rdflib = "^7.2.1"
+pandas = "^2.3.3"
+tqdm = "^4.66.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.0.0"
+ruff = "^0.5.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
